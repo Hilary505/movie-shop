@@ -6,9 +6,10 @@ import MovieCard from './Components/MovieCard.jsx';
 import { useDebounce } from 'react-use'
 import Appwrite from './appwrite.jsx';
 import { getTopSearches } from './appwrite.jsx';
+import { Routes, Route, Link } from 'react-router-dom';
+import Watchlist from './Components/Watchlist.jsx';
 
-function App() {
-
+function HomePage() {
   //application sates hooks
   const [movies, setMovies] = useState([]);
   const [searchItem, setSearchTerm] = useState('');
@@ -29,8 +30,6 @@ function App() {
     },
   }
 
-
-
   const fetchMovies = async (query = '') => {
     setLoading(true);
     setErrorMessage('');
@@ -43,10 +42,7 @@ function App() {
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
-      // console.log(response)
-
       const data = await response.json();
-      // console.log(data)
       if (!data.response === false) {
         setErrorMessage('Failed to fetch movies: ' + data.Error);
         setMovies([]);
@@ -76,8 +72,6 @@ function App() {
   };
 
   useEffect(() => {
-    console.log(debouncedSearchTerm)
-    console.log(searchItem)
     fetchMovies(debouncedSearchTerm);
   }, [searchItem]);
 
@@ -86,70 +80,67 @@ function App() {
   }, []);
 
   return (
+    <>
+      <header className='flex flex-col items-center gap-4'>
+        <div className='image-container'></div>
+        <div className='text-container backdrop-blur-sm bg-white/10 dark:bg-black/10 p-6 rounded-xl'>
+          <h1 className='text-3xl  text-center text-amber-500'>Movie Shop</h1>
+        </div>
+        <nav className="flex gap-4 mt-2">
+          <Link to="/" className="text-amber-400 hover:text-amber-200 font-semibold">Home</Link>
+          <Link to="/watchlist" className="text-amber-400 hover:text-amber-200 font-semibold">Watchlist</Link>
+        </nav>
+        <Search searchItem={searchItem} setSearchTerm={setSearchTerm} />
+      </header>
+      {topSearches.length > 0 && (
+        <section className='top-searches mx-0 my-auto p-4'>
+          <h2 className='text-xl md:text-2xl mb-4 font-bold text-center text-white'>Top Searches</h2>
+          <ul className='flex flex-wrap gap-2 justify-center md:gap-4 lg:flex-nowrap'>
+            {topSearches.map((movie, index) => (
+              <li key={movie.id} className='flex flex-row gap-1 items-center'>
+                <span className='text-2xl md:text-4xl font-extrabold text-amber-600'>{index + 1}</span>
+                <img
+                  className='w-full max-w-[100px] md:max-w-[150px] h-auto rounded-lg shadow-lg'
+                  src={movie.poster_url ? `https://image.tmdb.org/t/p/w500${movie.poster_url}` : './src/assets/posters.png'}
+                  alt={movie.title}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      <section className='all-movies'>
+        <h2 className='mt-5 p-5 text-3xl font-bold text-center text-white'>All Movies</h2>
+        {isloading ? (
+          <Spinner />
+        ) : errorMessage ? (
+          <p className='text-red-500 text-center'>Error {errorMessage}</p>
+        ) : (
+          <div className="movie-cards-container">
+            <ul className="bg-white-100 text-white grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-8 gap-x-6 max-w-7xl mx-auto px-4 pb-10">
+              {movies.map((movie) => (
+                <MovieCard key={movie.id} movie={movie} />
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
+
+function App() {
+  return (
     <main className="App">
-      {/* Blur Background */}
       <div className="blur-background">
         <div className="blur-overlay"></div>
       </div>
-
       <div className='container relative z-10'>
         <div className='content-wrapper'>
-          <header className='flex flex-col items-center gap-4'>
-            <div className='image-container'>
-              {/* <img
-                src='/src/assets/poster.png'
-                alt='poster'
-                className='w-90 max-w-full h-auto rounded-lg shadow-lg'
-              /> */}
-            </div>
-            <div className='text-container backdrop-blur-sm bg-white/10 dark:bg-black/10 p-6 rounded-xl'>
-              <h1 className='text-3xl  text-center text-amber-500'>Movie Shop</h1>
-            </div>
-            <Search searchItem={searchItem} setSearchTerm={setSearchTerm} />
-          </header>
-
-
-          {topSearches.length > 0 && (
-            <section className='top-searches mx-0 my-auto p-4'>
-              <h2 className='text-xl md:text-2xl mb-4 font-bold text-center text-white'>Top Searches</h2>
-
-              <ul className='flex flex-wrap gap-2 justify-center md:gap-4 lg:flex-nowrap'>
-                {topSearches.map((movie, index) => (
-                  <li key={movie.id} className='flex flex-row gap-1 items-center'>
-                    {/* Styled Number Index */}
-                    <span className='text-2xl md:text-4xl font-extrabold text-amber-600'>{index + 1}</span>
-
-                    {/* Movie Poster */}
-                    <img
-                      className='w-full max-w-[100px] md:max-w-[150px] h-auto rounded-lg shadow-lg'
-                      src={movie.poster_url ? `https://image.tmdb.org/t/p/w500${movie.poster_url}` : './src/assets/posters.png'}
-                      alt={movie.title}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          <section className='all-movies'>
-            <h2 className='mt-5 p-5 text-3xl font-bold text-center text-white'>All Movies</h2>
-            {isloading ? (
-              <>
-                <Spinner />
-              </>
-            ) : errorMessage ? (
-              <p className='text-red-500 text-center'>Error {errorMessage}</p>
-            ) : (
-              <div className="movie-cards-container">
-                <ul className="bg-white-100 text-white grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-8 gap-x-6 max-w-7xl mx-auto px-4 pb-10">
-                  {movies.map((movie) => (
-                    <MovieCard key={movie.id} movie={movie} />
-                  ))}
-                </ul>
-              </div>
-            )}
-
-          </section>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/watchlist" element={<Watchlist />} />
+          </Routes>
         </div>
       </div>
     </main>
