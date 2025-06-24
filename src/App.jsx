@@ -17,6 +17,8 @@ function HomePage() {
   const [isloading, setLoading] = useState(false);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [topSearches, setTopSearches] = useState([]);
+  const [genres, setGenres] = useState([]);
+  const [selectedGenre, setSelectedGenre] = useState('');
 
   useDebounce(() => setDebouncedSearchTerm(searchItem), 500, [searchItem]);
 
@@ -30,14 +32,31 @@ function HomePage() {
     },
   }
 
-  const fetchMovies = async (query = '') => {
+  useEffect(() => {
+    const fetchGenres = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/genre/movie/list?language=en-US`, API_OPTIONS);
+        const data = await response.json();
+        setGenres(data.genres || []);
+      } catch (error) {
+        console.error('Error fetching genres:', error);
+      }
+    };
+    fetchGenres();
+  }, []);
+
+  const fetchMovies = async (query = '', genreId = '') => {
     setLoading(true);
     setErrorMessage('');
     try {
-      const endpoint = query
-        ? `${API_BASE_URL}/search/movie?query=${encodeURI(query)}`
-        : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
-
+      let endpoint;
+      if (query) {
+        endpoint = `${API_BASE_URL}/search/movie?query=${encodeURI(query)}`;
+      } else if (genreId) {
+        endpoint = `${API_BASE_URL}/discover/movie?sort_by=popularity.desc&with_genres=${genreId}`;
+      } else {
+        endpoint = `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
+      }
       const response = await fetch(endpoint, API_OPTIONS);
       if (!response.ok) {
         throw new Error('Network response was not ok');
@@ -49,11 +68,9 @@ function HomePage() {
         return;
       }
       setMovies(data.results || []);
-
       if (query && data.results.length > 0) {
         await Appwrite(query, data.results[0]);
       }
-
     } catch (error) {
       console.error('Error fetching movies:', error);
       setErrorMessage(error.message);
@@ -72,8 +89,12 @@ function HomePage() {
   };
 
   useEffect(() => {
-    fetchMovies(debouncedSearchTerm);
-  }, [searchItem]);
+    if (selectedGenre) {
+      fetchMovies('', selectedGenre);
+    } else {
+      fetchMovies(debouncedSearchTerm);
+    }
+  }, [searchItem, selectedGenre]);
 
   useEffect(() => {
     loadTrendingMovies();
@@ -91,6 +112,18 @@ function HomePage() {
           <Link to="/watchlist" className="text-amber-400 hover:text-amber-200 font-semibold">Watchlist</Link>
         </nav>
         <Search searchItem={searchItem} setSearchTerm={setSearchTerm} />
+        <div className="mt-4">
+          <select
+            className="p-2 rounded border border-gray-300 bg-white text-black"
+            value={selectedGenre}
+            onChange={e => setSelectedGenre(e.target.value)}
+          >
+            <option value="">All Genres</option>
+            {genres.map(genre => (
+              <option key={genre.id} value={genre.id}>{genre.name}</option>
+            ))}
+          </select>
+        </div>
       </header>
       {topSearches.length > 0 && (
         <section className='top-searches mx-0 my-auto p-4'>
