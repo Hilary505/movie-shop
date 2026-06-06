@@ -13,5 +13,8 @@ export default defineConfig({
     watch: {
       usePolling: true
     }
+  },
+  preview: {
+    allowedHosts: ['movie-shop-3.onrender.com']
   }
 })
