@@ -15,6 +15,6 @@ export default defineConfig({
     }
   },
   preview: {
-    allowedHosts: ['movie-shop-3.onrender.com']
+    allowedHosts: ['movie-shop-4.onrender.com']
   }
 })
